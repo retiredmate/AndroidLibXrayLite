@@ -1,0 +1,53 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.20.5
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: gomobile init
+        run: gomobile init
+        
+      - name: go mod tidy
+        run: go mod tidy -v
+
+      - name: Build project
+        run: gomobile bind -v -androidapi 19 -ldflags='-s -w' ./
+        
+      - name: Generate unique ID
+        id: generate_id
+        run: echo "::set-output name=unique_id::$(date +%s)"
+        
+      - name: Create GitHub release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.generate_id.outputs.unique_id }}
+          release_name: Release ${{ steps.generate_id.outputs.unique_id }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./libv2ray.aar
+          asset_name: libv2ray.aar
+          asset_content_type: application/octet-stream

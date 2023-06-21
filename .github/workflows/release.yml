@@ -36,6 +36,7 @@ jobs:
         run: echo "::set-output name=unique_id::$(date +%s)"
         
       - name: Create GitHub release
+        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
